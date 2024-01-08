@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  server:
+    image: headscale/headscale:0.22
+    restart: unless-stopped
+    command: headscale serve
+    ports:
+      - ${HEADSCALE_LISTEN_PORT:-8080}:8080
+      # - ${METRICS_LISTEN_PORT:-9090}:9090
+      # - ${GRPC_LISTEN_PORT:-50443}:50443
+      # - ${STUN_LISTEN_PORT:-3478}:3478
+    volumes:
+      - ./config:/etc/headscale/
+
+  #  management:
+  #    image: ghcr.io/parallelo3301/headscale-management:0.0.1-alpha
+  #    restart: unless-stopped
+  #    environment:
+  #      - HEADSCALE_SERVER_URL=${HEADSCALE_SERVER_URL:-http://server:8080} # all requests go through the backend, so the URL can be container name
+  #      - PUBLIC_SERVER_URL=${PUBLIC_SERVER_URL:-https://headscale.company.tld} # used to generate links, docs, etc.
+  #      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+  #    ports:
+  #      - ${MANAGEMENT_PORT:-5000}:${MANAGEMENT_PORT:-5000}
+  #    volumes:
+  #      - ./config/acls.json:/app/data/acls.json:ro
+
+  controller:
+    image: ghcr.io/parallelo3301/headscale-controller:0.0.2-beta
+    restart: unless-stopped
+    environment:
+      - PORT=${CONTROLLER_PORT:-6000}
+      - HEADSCALE_SERVER_URL=${HEADSCALE_SERVER_URL:-http://server:8080}
+      - USE_SOCAT=${USE_SOCAT}
+    ports:
+      - ${CONTROLLER_PORT:-6000}:${CONTROLLER_PORT:-6000}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/acls.json:/app/acls.json
+# Uncomment following if you want to run it on macOS
+#    # this is still part of controller service
+#    depends_on:
+#      - socat
+#  # new service
+#  socat:
+#    image: alpine/socat
+#    command: tcp-listen:2375,fork,reuseaddr unix-connect:/var/run/docker.sock
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    ports:
+#      - 2375:2375

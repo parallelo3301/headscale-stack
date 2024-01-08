@@ -1,0 +1,8 @@
+{
+  "groups": {
+    "group:admin": ["admin"]
+  },
+  "tagOwners": {
+    "tag:internal": ["group:admin"]
+  }
+}
